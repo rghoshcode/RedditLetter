@@ -9,6 +9,7 @@ const port = process.env.PORT;
 const sgMail = require('@sendgrid/mail');
 const SG_API_KEY = process.env.SENDGRID_API_KEY;
 const User = require('./models/User');
+const getHTML = require('./getHTML');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -34,15 +35,33 @@ app.listen(port, function(){
 });
 
 sgMail.setApiKey(SG_API_KEY);
-const mailBody = {
-    from : 'ranajoy121@gmail.com',
-    to : allUsers.map(u=>u.email),
-    subject : 'Daily Reddit Digest',
-    html : '',
-};
+
 
 //SENDING OUT AN EMAIL TO EACH USER
-sgMail.send(mailBody).then(res=>console.log('Email sent', res)).catch(err=>console.log(err.message));
+const now = new Date();
+let millisTill8 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0, 0) - now;
+if (millisTill8 < 0) {
+    millisTill8 += 86400000; // it's after 8am, try 8am on the next day.
+}
+setTimeout(function(){
+
+    allUsers.forEach(user=>{
+        const mailBody = {
+            from : 'ranajoy121@gmail.com',
+            to : user.email,
+            subject : 'Daily Reddit Digest',
+            html : getHTML.getHTML(user),
+        };
+        //SEND OUT THE EMAIL TO THE SPECIFIC USER
+        sgMail.send(mailBody).then(res=>console.log('Email sent', res)).catch(err=>console.log(err.message));
+
+    })
+
+
+}, millisTill8);
+
+
+
 
 
 
